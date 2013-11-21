@@ -1,5 +1,4 @@
 ﻿module GameEvents
-
 open System
 
 type GameCommands =

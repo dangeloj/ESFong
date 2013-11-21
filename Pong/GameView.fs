@@ -11,7 +11,7 @@ type GameForm(bus:IEventBus, player:Guid) as this =
     inherit Form(Text = "Pong", Width = 640, Height = 480, MaximizeBox = false)
     
     let buffer = BufferedGraphicsManager.Current.Allocate(this.CreateGraphics(), this.DisplayRectangle)
-    let width, height = 640, 480
+    let width, height = this.Width, this.Height
     let invoke f =
         let action = new Action(fun() -> f this)
         this.Invoke action |> ignore
@@ -43,7 +43,7 @@ type GameForm(bus:IEventBus, player:Guid) as this =
 
     member this.RenderFrame (f:Graphics->unit) =
         invoke (fun form ->
-            buffer.Graphics.FillRectangle(Brushes.CornflowerBlue, 0, 0, 640, 480)
+            buffer.Graphics.FillRectangle(Brushes.CornflowerBlue, 0, 0, width, height)
             f buffer.Graphics
             buffer.Render())
 

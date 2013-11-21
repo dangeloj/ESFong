@@ -1,5 +1,4 @@
 ﻿module EntityManagement
-
 open System
 open System.Collections.Generic
 
@@ -20,14 +19,14 @@ and Entity =
 
 type EntityManager() =
     
-    let entities = List<Guid>()
-    let entityComponents = Dictionary<Guid, List<obj>>()
+    let entities = ResizeArray<Guid>()
+    let entityComponents = Dictionary<Guid, ResizeArray<obj>>()
 
     interface IEntityManager with
         member this.CreateEntity() =
             let id = Guid.NewGuid()
             entities.Add id
-            entityComponents.Add(id, List<obj>())
+            entityComponents.Add(id, ResizeArray())
             { Id = id; Manager = this }
 
         member this.RemoveEntity entity =

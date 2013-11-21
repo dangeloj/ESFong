@@ -9,21 +9,19 @@ type EntitySystem (init, frame, shutdown) =
     member this.Init():unit = init()
     member this.Frame (tick:float<second>):unit = frame tick
     member this.Shutdown():unit = shutdown()
-
     static member Create init frame shutdown = EntitySystem(init, frame, shutdown)
     static member InitAll (systems:EntitySystem seq) = systems |> Seq.iter (fun system -> system.Init())
     static member ShutdownAll (systems:EntitySystem seq) = systems |> Seq.iter (fun system -> system.Shutdown())
 
     module Systems =
-
         open System.Threading
-
         open Eventing
     
         let CreateBusSystem (bus:EventBus) =
             let init() = ()
             let shutdown() = ()
             let frame tick =
+                Thread.Sleep 1
                 bus.Tick()
 
             EntitySystem.Create init frame shutdown
