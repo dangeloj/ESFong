@@ -3,9 +3,10 @@ open System.Diagnostics
 open System.Drawing
 open System.Windows.Forms
 
+open Components.Templating
+open Drawing
 open EntityManagement
 open EntitySystems
-open EntitySystems.Templating
 open Eventing
 open GameEvents
 open GameView
@@ -19,14 +20,19 @@ do
 
     let bus = EventBus()
     let manager = EntityManager()
-    let player = createPlayer manager Human
-    let computer = createPlayer manager Computer
-    let systems = [| Systems.CreateBusSystem bus |]
+    let humanPlayer = createPlayer manager true
+    let computer = createPlayer manager false
+    let ball = createBall manager
+    use form = new GameForm(bus, humanPlayer.Id)
+    let systems =
+        [| BasicSystems.CreateBusSystem bus;
+           Movement.MakeMovementSystem manager bus;
+           Movement.MakeVelocitySystem manager;
+           MakeDrawingSystem manager form |]
+           
+    CreateLoop bus systems
+    |> RunLoop source.Token
 
-    Systems.CreateLoop systems
-        |> Systems.RunLoop source.Token
-
-    use form = new GameForm(bus, player.Id)
     Application.Run(form)
 
     source.Cancel()

@@ -4,6 +4,8 @@ open System
 type GameCommands =
     | MoveUp of Player:Guid
     | MoveDown of Player:Guid
+    | StopMoveUp of Player:Guid
+    | StopMoveDown of Player:Guid
     | Pause | Resume | Quit
 
 type GameEvents =

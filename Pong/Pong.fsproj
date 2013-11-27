@@ -53,7 +53,10 @@
     <Compile Include="Eventing.fs" />
     <Compile Include="EntityManagement.fs" />
     <Compile Include="EntitySystems.fs" />
+    <Compile Include="Components.fs" />
     <Compile Include="GameView.fs" />
+    <Compile Include="Movement.fs" />
+    <Compile Include="Drawing.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>

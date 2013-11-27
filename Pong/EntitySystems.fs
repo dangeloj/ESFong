@@ -1,21 +1,24 @@
 ﻿module EntitySystems
 open System.Diagnostics
 open EntityManagement
+open Eventing
+open GameEvents
 
 [<Measure>] type second
-let toSecond f = f * 1.0<second>
 
 type EntitySystem (init, frame, shutdown) =
     member this.Init():unit = init()
-    member this.Frame (tick:float<second>):unit = frame tick
+    member this.Frame (tick:float32<second>):unit = frame tick
     member this.Shutdown():unit = shutdown()
     static member Create init frame shutdown = EntitySystem(init, frame, shutdown)
     static member InitAll (systems:EntitySystem seq) = systems |> Seq.iter (fun system -> system.Init())
     static member ShutdownAll (systems:EntitySystem seq) = systems |> Seq.iter (fun system -> system.Shutdown())
+    static member BasicSystem frame =
+        let empty() = ()
+        EntitySystem(empty, frame, empty)
 
-    module Systems =
+    module BasicSystems =
         open System.Threading
-        open Eventing
     
         let CreateBusSystem (bus:EventBus) =
             let init() = ()
@@ -25,35 +28,28 @@ type EntitySystem (init, frame, shutdown) =
                 bus.Tick()
 
             EntitySystem.Create init frame shutdown
-        
-        let CreateLoop systems =
-            async {
-                systems |> EntitySystem.InitAll
-
-                let watch = Stopwatch.StartNew()
-                let rec loop lastTick =
-                    let nextTick = watch.Elapsed.TotalSeconds
-                    let tick = toSecond(nextTick - lastTick)
             
+let RunLoop token async = Async.Start(async, token)
+let CreateLoop (bus:#IEventBus) systems =
+    let getSeconds (watch:Stopwatch) = float32 watch.Elapsed.TotalSeconds * 1.f<second>
+    let paused = ref false
+            
+    async { bus.Stream
+            |> Event.filter (fun e -> match e with | :? GameEvents -> true | _ -> false)
+            |> Event.map (fun e -> e :?> GameEvents)
+            |> Event.add (function
+                | Paused -> paused := true
+                | Resumed -> paused := false
+                | _ -> ())
+
+            systems |> EntitySystem.InitAll
+            let watch = Stopwatch.StartNew()
+            let rec loop lastTick p =
+                let nextTick = getSeconds watch
+                let tick = nextTick - lastTick
+
+                if not p then            
                     systems |> Seq.iter (fun system -> system.Frame tick)
 
-                    loop nextTick
-                loop 0.  
-            }
-
-        let RunLoop token async = Async.Start(async, token)
-
-    module Templating =
-        open EntityManagement
-
-        type PlayerTypes = Human | Computer | Remote
-
-        let createPlayer (manager : #IEntityManager) playerType =
-            let player = manager.CreateEntity()
-
-            match playerType with
-            | Human -> ()
-            | Computer -> ()
-            | Remote -> ()
-
-            player
+                loop nextTick !paused
+            loop (getSeconds watch) !paused }
